@@ -1,0 +1,331 @@
+#include "raylib.h"
+#include "main.hpp"
+#include <raylib-cpp.hpp>
+#include <iostream>
+#include <string>
+
+#define PADDLE_SPEED 400.0f
+#define MAX_BALL_SPEED 5.0f
+#define HEIGHT 600.0f
+#define WIDTH 800.0f
+#define MAX_SCORE 3
+
+constexpr Vector2 CENTER = { WIDTH/2, HEIGHT/2 };
+
+bool DEBUG = false;
+
+enum gamestate {
+    START,
+    PLAY,
+    PAUSE,
+    WIN
+} GAMESTATE;
+
+enum player_t { LEFT, RIGHT };
+
+class Paddle {
+public:
+    Rectangle area;
+    enum player_t player;
+    int score;
+
+    Paddle(Rectangle area, player_t player, int score) {
+        this->area = area;
+        this->player = player;
+        this->score = score;
+    }
+
+    void reset()
+    {
+        // reset paddles positions to the middle of their range
+        if (this->player == player_t::LEFT) {
+            this->area.x = 0;
+            this->area.y = HEIGHT/2;
+            this->score = 0;
+        } else if (this->player == player_t::RIGHT) {
+            this->area.x = WIDTH-20;
+            this->area.y = HEIGHT/2;
+            this->score = 0;
+        }
+    }
+
+    void update(float delta)
+    {
+        float currentPos = this->area.y;
+        float targetPos = currentPos;
+
+    	// paddle input
+    	if ( (this->player == player_t::RIGHT) && (GAMESTATE == PLAY) ) {
+                // handle upper/lower boundaries
+            if ( IsKeyDown(KEY_UP) && (this->area.y >= 0) ) {
+                targetPos -= PADDLE_SPEED*delta;
+                this->area.y = Lerp(currentPos, targetPos, 1.0);
+            }
+    	    if ( IsKeyDown(KEY_DOWN) && (this->area.y + this->area.height <= HEIGHT) ) {
+                targetPos += PADDLE_SPEED*delta;
+                this->area.y = Lerp(currentPos, targetPos, 1.0);
+            }
+    	}
+
+    	if ( (this->player == player_t::LEFT) && (GAMESTATE == PLAY) ) {
+    		if (IsKeyDown(KEY_W) && (this->area.y >= 0) ) {
+                targetPos -= PADDLE_SPEED*delta;
+                this->area.y = Lerp(currentPos, targetPos, 1.0);
+            }
+    	    if (IsKeyDown(KEY_S) && (this->area.y + this->area.height <= HEIGHT)) {
+                targetPos += PADDLE_SPEED*delta;
+                this->area.y = Lerp(currentPos, targetPos, 1.0);
+            }
+    	}
+    }
+};
+
+class Ball {
+public:
+    Vector2 pos;
+    Vector2 angle;
+    int radius;
+    float speed;
+
+    Ball(Vector2 pos, Vector2 angle, int radius, float speed) {
+        this->pos = pos;
+        this->angle = angle;
+        this->radius = radius;
+        this->speed = speed;
+    }
+
+    void update(float delta)
+    {
+        if (GAMESTATE == PLAY) {
+            Vector2 currentPos = this->pos;
+            Vector2 targetPos = {
+                currentPos.x + this->angle.x * (delta * this->speed),
+                currentPos.y + this->angle.y * (delta * this->speed)
+            };
+            this->pos = Vector2Lerp(currentPos, targetPos, 1.0);
+        }
+    }
+
+    void bounce(int x, int y)
+    {
+        this->angle.x = x * this->angle.x;
+        this->angle.y = y * this->angle.y;
+        // TODO: play bounce SFX
+
+        if (this->speed < 6.0f) {
+            this->speed = this->speed + 0.2f;
+        }
+    }
+
+    void reset(Vector2 random_angle)
+    {
+        // reset angle and set ball position to center of the screen
+        this->pos = CENTER;
+        this->angle = random_angle;
+    }
+};
+
+
+int main ()
+{
+	SetTargetFPS(60);
+	// SetConfigFlags(FLAG_VSYNC_HINT | FLAG_WINDOW_HIGHDPI | FLAG_MSAA_4X_HINT);
+	InitWindow(WIDTH, HEIGHT, "Raylib PONG");
+
+	// Create paddles
+    Paddle P1(
+        (Rectangle){ 0, HEIGHT/2, 20, 110 },
+        player_t::LEFT,
+        0
+    );
+    // std::cout << std::to_string(P1.score) << std::endl;
+
+	Paddle P2(
+	    (Rectangle){ WIDTH-20, HEIGHT/2, 20, 110 },
+		player_t::RIGHT,
+		0
+	);
+
+    // the ball
+    Ball ball(CENTER, randomAngle(), 20, 5.0f);
+
+    // start screen
+    GAMESTATE = START;
+
+    // game loop
+    while (!WindowShouldClose())
+	{
+		float dt = GetFrameTime();
+
+        HandleGamestate(&ball, &P1, &P2); // controls START/PLAY/PAUSE logic
+
+        P1.update(dt);
+        P2.update(dt);
+        ball.update(dt);
+
+        // scoring logic
+        if (ball.pos.x <= 0) {
+            ball.reset(randomAngle());
+            P2.score += 1;
+            if (P2.score == MAX_SCORE) {
+                GAMESTATE = WIN;
+            }
+        }
+        if (ball.pos.x >= WIDTH) {
+            ball.reset(randomAngle());
+            P1.score += 1;
+            if (P1.score == MAX_SCORE) {
+                GAMESTATE = WIN;
+            }
+        }
+
+        // edge of play bounce
+        if ( ball.pos.y <= (0 + static_cast<int>(ball.radius)) ) {
+           ball.bounce(1, -1);
+        }
+
+        if ( ball.pos.y >= (HEIGHT - static_cast<int>(ball.radius)) ) {
+            ball.bounce(1, -1);
+        }
+
+        // P1 paddle bounce
+        if (
+                (ball.pos.x <= P1.area.width + ball.radius) &&
+                (ball.pos.y > P1.area.y) &&
+                (ball.pos.y <= P1.area.y + P1.area.height)
+            )
+        {
+            ball.bounce(-1, 1);
+            ball.pos.x = ball.pos.x + 5;
+        }
+
+        // P2 paddle bounce
+        if (
+                (ball.pos.x >= WIDTH - P2.area.width - ball.radius) &&
+                (ball.pos.y >= P2.area.y) &&
+                (ball.pos.y <= P2.area.y + P2.area.height)
+            )
+        {
+            ball.bounce(-1, 1);
+            ball.pos.x = ball.pos.x - 5;
+        }
+
+        BeginDrawing();
+            // set background colour
+            ClearBackground(RAYWHITE);
+
+            // std::string msg = "p1 score: " + std::to_string(P1.get_score());
+            // std::cout << msg << std::endl;
+            if (GAMESTATE == START) {
+                // draw title
+                int titleLen = MeasureText("PONG!", 50);
+                DrawText("PONG!", static_cast<int>(CENTER.x) - titleLen/2, 50, 50, BLACK);
+
+                // draw controls instructions
+                const char* p1Controls = "Player 1: press W or S to move the paddle";
+                const char* p2Controls = "Player 2: press UP or DOWN to move the paddle";
+                const char* startMsg = "Press ENTER to start the game!";
+                int p1ControlsLen = MeasureText(p1Controls, 10);
+                int p2ControlsLen = MeasureText(p2Controls, 10);
+                int startMsgLen = MeasureText(startMsg, 10);
+
+                DrawText(p1Controls, (int)CENTER.x - (p1ControlsLen/2), 110, 10, BLACK);
+                DrawText(p2Controls, (int)CENTER.x - (p2ControlsLen/2), 130, 10, BLACK);
+                DrawText(startMsg, (int)CENTER.x - (startMsgLen/2), 150, 10, BLACK);
+
+                // TODO: have black start screen, when start game shrink it to ball
+                // TODO: add custom colorschemes/themes/courts
+            }
+
+            if (GAMESTATE == PLAY) {
+                int scorecardLen = MeasureText("P1: 0     P2: 0", 20);
+                DrawText(
+                        TextFormat("P1: %i     P2: %i", P1.score, P2.score),
+                        static_cast<int>(CENTER.x) - (scorecardLen/2), 10, 20, BLACK
+                );
+
+                DrawLine(CENTER.x, 0, CENTER.x, HEIGHT, BLACK);
+                // TODO: other pong graphical bits, like a videoball type court
+            }
+
+            if (GAMESTATE == PAUSE) {
+                int pauseLen = MeasureText("PAUSE", 50);
+                DrawText("PAUSE", static_cast<int>(CENTER.x) - pauseLen/2, CENTER.y, 50, BLACK);
+            }
+
+            if (GAMESTATE == WIN) {
+                // print win message
+                const int winner = (P1.score > P2.score) ? 1 : 2;
+
+                const char *winMsg = TextFormat("Player %d wins!", winner);
+                const int winLen = MeasureText(winMsg, 50);
+                DrawText(
+                    winMsg,
+                    static_cast<int>(CENTER.x) - winLen/2,
+                    CENTER.y,
+                    50,
+                    BLACK
+                );
+            }
+
+            if (DEBUG) {
+                DrawText(TextFormat("fps: %i", GetFPS()), 200, 10, 10, BLACK);
+                DrawText(TextFormat("gamestate: %i", GAMESTATE), 200, 20, 10, BLACK);
+                DrawText(TextFormat("ball speed: %0.2f", ball.speed), 200, 30, 10, BLACK);
+                DrawLine(CENTER.x, 0, CENTER.x, HEIGHT, BLACK);
+            }
+
+			// draw objects
+            if (GAMESTATE != WIN) {
+                DrawRectangleRec(P1.area, RED);
+                DrawRectangleRec(P2.area, BLUE);
+                DrawCircle(ball.pos.x, ball.pos.y, ball.radius, BLACK);
+
+                // TODO: add different map with extra collision bits
+                //       iterate through array of recs and draw
+                //       need extra collision code for them too
+            }
+
+        EndDrawing();
+    }
+
+	// cleanup
+	CloseWindow();
+	return 0;
+}
+
+Vector2 randomAngle()
+{
+    Vector2 angle = {0};
+
+    // dx, randomly choose either +100 or -100
+    if ( GetRandomValue(1, 2) == 1 ) {
+        angle.x = 100.0f;
+    } else {
+        angle.x = -100.0f;
+    };
+
+    // dy, random value between -50 and 50
+    angle.y = static_cast<float>(GetRandomValue(-50, 50));
+
+    return angle;
+}
+
+void HandleGamestate(Ball *b, Paddle *p1, Paddle *p2)
+{
+    if (IsKeyPressed(KEY_TAB)) {
+        if (DEBUG) { DEBUG = false; } else { DEBUG = true; }
+    }
+
+    if (IsKeyPressed(KEY_ENTER)) {
+        if (GAMESTATE == START) { GAMESTATE = PLAY; } else { GAMESTATE = START; }
+            p1->reset();
+            p2->reset();
+            b->reset(randomAngle());
+    }
+
+    if (IsKeyPressed(KEY_SPACE)) {
+        if (GAMESTATE == PLAY) { GAMESTATE = PAUSE; } else { GAMESTATE = PLAY; }
+    }
+}
+
