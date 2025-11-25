@@ -15,11 +15,10 @@ constexpr Vector2 CENTER = { WIDTH/2, HEIGHT/2 };
 class Paddle {
 public:
     Rectangle area;
-    enum player_t player;
-    int score;
+    player_t player;
 
-    Paddle(Rectangle area, player_t player, int score)
-        : area(area), player(player), score(score) {}
+    Paddle(Rectangle area, player_t player)
+        : area(area), player(player) {}
 
     void reset()
     {
@@ -27,11 +26,9 @@ public:
         if (this->player == player_t::LEFT) {
             this->area.x = 0;
             this->area.y = HEIGHT/2;
-            this->score = 0;
         } else if (this->player == player_t::RIGHT) {
             this->area.x = WIDTH-20;
             this->area.y = HEIGHT/2;
-            this->score = 0;
         }
     }
 
@@ -42,7 +39,7 @@ public:
 
     	// paddle input
     	if ((this->player == player_t::RIGHT) && (ctx.state == Gamestate::PLAY)) {
-                // handle upper/lower boundaries
+            // handle upper/lower boundaries
             if ( IsKeyDown(KEY_UP) && (this->area.y >= 0) ) {
                 targetPos -= PADDLE_SPEED*delta;
                 this->area.y = Lerp(currentPos, targetPos, 1.0);
@@ -73,12 +70,8 @@ public:
     int radius;
     float speed;
 
-    Ball(Vector2 pos, Vector2 angle, int radius, float speed) {
-        this->pos = pos;
-        this->angle = angle;
-        this->radius = radius;
-        this->speed = speed;
-    }
+    Ball(Vector2 pos, Vector2 angle, int radius, float speed)
+        : pos(pos), angle(angle), radius(radius), speed(speed) {}
 
     void update(GameContext ctx, float delta)
     {
@@ -121,14 +114,12 @@ int main ()
 	// Create paddles
     Paddle P1(
         (Rectangle){ 0, HEIGHT/2, 20, 110 },
-        player_t::LEFT,
-        0
+        player_t::LEFT
     );
 
 	Paddle P2(
 	    (Rectangle){ WIDTH-20, HEIGHT/2, 20, 110 },
-		player_t::RIGHT,
-		0
+		player_t::RIGHT
 	);
 
     // initialise the ball object
@@ -156,15 +147,15 @@ int main ()
         // scoring logic
         if (ball.pos.x <= 0) {
             ball.reset(randomAngle());
-            P2.score += 1;
-            if (P2.score == MAX_SCORE) {
+            ctx.p2_score += 1;
+            if (ctx.p2_score == MAX_SCORE) {
                 ctx.state = Gamestate::WIN;
             }
         }
         if (ball.pos.x >= WIDTH) {
             ball.reset(randomAngle());
-            P1.score += 1;
-            if (P1.score == MAX_SCORE) {
+            ctx.p1_score += 1;
+            if (ctx.p1_score == MAX_SCORE) {
                 ctx.state = Gamestate::WIN;
             }
         }
@@ -219,9 +210,9 @@ int main ()
                 int p2ControlsLen = MeasureText(p2Controls, 10);
                 int startMsgLen = MeasureText(startMsg, 10);
 
-                DrawText(p1Controls, (int)CENTER.x - (p1ControlsLen/2), 110, 10, BLACK);
-                DrawText(p2Controls, (int)CENTER.x - (p2ControlsLen/2), 130, 10, BLACK);
-                DrawText(startMsg, (int)CENTER.x - (startMsgLen/2), 150, 10, BLACK);
+                DrawText(p1Controls, static_cast<int>(CENTER.x) - (p1ControlsLen/2), 110, 10, BLACK);
+                DrawText(p2Controls, static_cast<int>(CENTER.x) - (p2ControlsLen/2), 130, 10, BLACK);
+                DrawText(startMsg, static_cast<int>(CENTER.x) - (startMsgLen/2), 150, 10, BLACK);
 
                 // TODO: have black start screen, when start game shrink it to ball
                 // TODO: add custom colorschemes/themes/courts
@@ -230,7 +221,7 @@ int main ()
             if (ctx.state == Gamestate::PLAY) {
                 int scorecardLen = MeasureText("P1: 0     P2: 0", 20);
                 DrawText(
-                        TextFormat("P1: %i     P2: %i", P1.score, P2.score),
+                        TextFormat("P1: %i     P2: %i", ctx.p1_score, ctx.p2_score),
                         static_cast<int>(CENTER.x) - (scorecardLen/2), 10, 20, BLACK
                 );
 
@@ -245,7 +236,7 @@ int main ()
 
             if (ctx.state == Gamestate::WIN) {
                 // print win message
-                const int winner = (P1.score > P2.score) ? 1 : 2;
+                const int winner = (ctx.p1_score > ctx.p2_score) ? 1 : 2;
 
                 const char *winMsg = TextFormat("Player %d wins!", winner);
                 const int winLen = MeasureText(winMsg, 50);
@@ -284,12 +275,11 @@ int main ()
 	return 0;
 }
 
-Vector2 randomAngle()
-{
+Vector2 randomAngle() {
     Vector2 angle = {0};
 
     // dx, randomly choose either +100 or -100
-    if ( GetRandomValue(1, 2) == 1 ) {
+    if (GetRandomValue(1, 2) == 1) {
         angle.x = 100.0f;
     } else {
         angle.x = -100.0f;
@@ -301,17 +291,16 @@ Vector2 randomAngle()
     return angle;
 }
 
-void HandleGamestate(GameContext *ctx, Ball *b, Paddle *p1, Paddle *p2)
-{
+void HandleGamestate(GameContext *ctx, Ball *b, Paddle *p1, Paddle *p2) {
     if (IsKeyPressed(KEY_TAB)) {
         if (ctx->debug) { ctx->debug = false; } else { ctx->debug = true; }
     }
 
     if (IsKeyPressed(KEY_ENTER)) {
         if (ctx->state == Gamestate::START) { ctx->state = Gamestate::PLAY; } else { ctx->state = Gamestate::START; }
-            p1->reset();
-            p2->reset();
-            b->reset(randomAngle());
+        p1->reset();
+        p2->reset();
+        b->reset(randomAngle());
     }
 
     if (IsKeyPressed(KEY_SPACE)) {
