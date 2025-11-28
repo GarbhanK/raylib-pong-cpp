@@ -3,8 +3,12 @@
 #include "game.hpp"
 #include "ball.hpp"
 
-Ball::Ball(Vector2 pos, Vector2 angle, int radius, float speed)
-    : pos(pos), angle(angle), radius(radius), speed(speed) {}
+Ball::Ball(Vector2 pos, int radius, float speed)
+    : pos{ pos }
+    , radius{ radius }
+    , speed{ speed }
+    , angle{ this->random_angle() }
+{}
 
 void Ball::update(GameContext ctx, float delta)
 {
@@ -29,9 +33,22 @@ void Ball::bounce(int x, int y)
     }
 }
 
-void Ball::reset(Vector2 pos, Vector2 random_angle)
+void Ball::reset(Vector2 pos)
 {
     // reset angle and set ball position to center of the screen
     this->pos = pos;
-    this->angle = random_angle;
+    this->angle = this->random_angle();
+}
+
+Vector2 Ball::random_angle()
+{
+    Vector2 angle = {0};
+
+    // dx, randomly choose either +100 or -100
+    angle.x = GetRandomValue(1, 2) == 1 ? 100.0f : -100.0f;
+
+    // dy, random value between -50 and 50
+    angle.y = static_cast<float>(GetRandomValue(-50, 50));
+
+    return angle;
 }

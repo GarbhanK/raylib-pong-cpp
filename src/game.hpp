@@ -3,6 +3,10 @@
 
 #include "raylib.h"
 
+// forward declarations to avoid circular imports
+class Paddle;
+class Ball;
+
 enum class Gamestate {
     START,
     PLAY,
@@ -19,8 +23,9 @@ struct GameContext {
     bool debug;
     const float screen_width;
     const float screen_height;
+    const Vector2 center;
 };
 
-Vector2 randomAngle();
+void HandleGamestate(GameContext *ctx, Ball *b, Paddle *p1, Paddle *p2);
 
 #endif

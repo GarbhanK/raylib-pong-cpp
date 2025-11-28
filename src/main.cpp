@@ -13,22 +13,6 @@
 constexpr Vector2 WINDOW = { .x = WIDTH, .y = HEIGHT };
 constexpr Vector2 CENTER = { WIDTH/2, HEIGHT/2 };
 
-void HandleGamestate(GameContext *ctx, Ball *b, Paddle *p1, Paddle *p2) {
-    if (IsKeyPressed(KEY_TAB)) {
-        if (ctx->debug) { ctx->debug = false; } else { ctx->debug = true; }
-    }
-
-    if (IsKeyPressed(KEY_ENTER)) {
-        if (ctx->state == Gamestate::START) { ctx->state = Gamestate::PLAY; } else { ctx->state = Gamestate::START; }
-        p1->reset(*ctx);
-        p2->reset(*ctx);
-        b->reset(CENTER, randomAngle());
-    }
-
-    if (IsKeyPressed(KEY_SPACE)) {
-        if (ctx->state == Gamestate::PLAY) { ctx->state = Gamestate::PAUSE; } else { ctx->state = Gamestate::PLAY; }
-    }
-}
 
 int main() {
 	SetTargetFPS(60);
@@ -61,7 +45,7 @@ int main() {
 	);
 
     // initialise the ball object
-    Ball ball(CENTER, randomAngle(), 20, 5.0f);
+    Ball ball(CENTER, 20, 5.0f);
 
     // game loop
     while (!WindowShouldClose()) {
@@ -75,14 +59,14 @@ int main() {
 
         // scoring logic
         if (ball.pos.x <= 0) {
-            ball.reset(CENTER, randomAngle());
+            ball.reset(CENTER);
             ctx.p2_score += 1;
             if (ctx.p2_score == MAX_SCORE) {
                 ctx.state = Gamestate::WIN;
             }
         }
         if (ball.pos.x >= WIDTH) {
-            ball.reset(CENTER, randomAngle());
+            ball.reset(CENTER);
             ctx.p1_score += 1;
             if (ctx.p1_score == MAX_SCORE) {
                 ctx.state = Gamestate::WIN;

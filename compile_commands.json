@@ -1,0 +1,7 @@
+[
+    {
+        "directory": "/Users/garbhan/Code/raylib-pong-cpp",
+        "command": "clang++ -std=c++20 -I include -L lib/macOS -l raylib -framework CoreVideo -framework IOKit -framework Cocoa -framework GLUT -framework OpenGL lib/libraylib.a -o bin/raylib-pong-cpp",
+        "file": "src/main.cpp"
+    }
+]

@@ -1,17 +1,21 @@
+#include "raylib.h"
 #include "game.hpp"
+#include "paddle.hpp"
+#include "ball.hpp"
 
-Vector2 randomAngle() {
-    Vector2 angle = {0};
+void HandleGamestate(GameContext *ctx, Ball *b, Paddle *p1, Paddle *p2) {
+    if (IsKeyPressed(KEY_TAB)) {
+        if (ctx->debug) { ctx->debug = false; } else { ctx->debug = true; }
+    }
 
-    // dx, randomly choose either +100 or -100
-    if (GetRandomValue(1, 2) == 1) {
-        angle.x = 100.0f;
-    } else {
-        angle.x = -100.0f;
-    };
+    if (IsKeyPressed(KEY_ENTER)) {
+        if (ctx->state == Gamestate::START) { ctx->state = Gamestate::PLAY; } else { ctx->state = Gamestate::START; }
+        p1->reset(*ctx);
+        p2->reset(*ctx);
+        b->reset(ctx->center);
+    }
 
-    // dy, random value between -50 and 50
-    angle.y = static_cast<float>(GetRandomValue(-50, 50));
-
-    return angle;
+    if (IsKeyPressed(KEY_SPACE)) {
+        if (ctx->state == Gamestate::PLAY) { ctx->state = Gamestate::PAUSE; } else { ctx->state = Gamestate::PLAY; }
+    }
 }
