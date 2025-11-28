@@ -95,7 +95,14 @@ void drawStart(GameContext ctx) {
     DrawText(startMsg, screen_width_int - (startMsgLen/2), 150, 10, BLACK);
 }
 
-void drawPlay(GameContext ctx) {
+void drawPlay(GameContext ctx, Paddle p1, Paddle p2, Ball ball) {
+    // draw paddles
+    DrawRectangleRec(p1.area, RED);
+    DrawRectangleRec(p2.area, BLUE);
+
+    // draw ball
+    DrawCircle(ball.pos.x, ball.pos.y, ball.radius, BLACK);
+
     int scorecardLen = MeasureText("P1: 0     p2: 0", 20);
     DrawText(
         TextFormat("P1: %i     p2: %i", ctx.p1_score, ctx.p2_score),
@@ -106,7 +113,13 @@ void drawPlay(GameContext ctx) {
     // TODO: other pong graphical bits, like a videoball type court
 }
 
-void drawPause(GameContext ctx) {
+void drawPause(GameContext ctx, Paddle p1, Paddle p2, Ball ball) {
+    // draw paddles (dimmed)
+    DrawRectangleRec(p1.area, MAROON);
+    DrawRectangleRec(p2.area, DARKBLUE);
+
+    // draw ball
+    DrawCircle(ball.pos.x, ball.pos.y, ball.radius, BLACK);
     int pauseLen = MeasureText("PAUSE", 50);
     DrawText("PAUSE", static_cast<int>(ctx.center.x) - pauseLen/2, ctx.center.y, 50, BLACK);
 }

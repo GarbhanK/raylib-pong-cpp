@@ -32,9 +32,9 @@ void HandleGamestate(GameContext *ctx, Ball *b, Paddle *p1, Paddle *p2);
 void handleBounce(GameContext ctx, Ball *ball, Paddle *p1, Paddle *p2);
 void handleScoring(GameContext *ctx, Ball *ball);
 void resetPlayerScores(GameContext *ctx);
-void drawPlay(GameContext ctx);
+void drawPlay(GameContext ctx, Paddle p1, Paddle p2, Ball ball);
 void drawStart(GameContext ctx);
-void drawPause(GameContext ctx);
+void drawPause(GameContext ctx, Paddle p1, Paddle p2, Ball ball);
 void drawWin(GameContext ctx);
 
 #endif

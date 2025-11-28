@@ -1,8 +1,7 @@
-// #include "raylib.h"
+#include <raylib-cpp.hpp>
 #include "game.hpp"
 #include "paddle.hpp"
 #include "ball.hpp"
-#include <raylib-cpp.hpp>
 
 #define PADDLE_SPEED 400.0f
 #define MAX_BALL_SPEED 5.0f
@@ -12,7 +11,6 @@
 
 constexpr Vector2 WINDOW = { .x = WIDTH, .y = HEIGHT };
 constexpr Vector2 CENTER = { WIDTH/2, HEIGHT/2 };
-
 
 int main() {
 	SetTargetFPS(60);
@@ -53,52 +51,28 @@ int main() {
     while (!WindowShouldClose()) {
 		float dt = GetFrameTime();
 
-        HandleGamestate(&ctx, &ball, &p1, &p2); // controls START/PLAY/PAUSE logic
+        // controls START/PLAY/PAUSE logic
+        HandleGamestate(&ctx, &ball, &p1, &p2);
 
+        // input controls and movement
         p1.update(ctx, dt);
         p2.update(ctx, dt);
         ball.update(ctx, dt);
 
         // scoring logic
         handleScoring(&ctx, &ball);
-        // if (ball.pos.x <= 0) {
-        //     ball.reset(CENTER);
-        //     ctx.p2_score += 1;
-        //     if (ctx.p2_score == MAX_SCORE) {
-        //         ctx.state = Gamestate::WIN;
-        //     }
-        // }
-        // if (ball.pos.x >= WIDTH) {
-        //     ball.reset(CENTER);
-        //     ctx.p1_score += 1;
-        //     if (ctx.p1_score == MAX_SCORE) {
-        //         ctx.state = Gamestate::WIN;
-        //     }
-        // }
 
         // handle bounces against edges and paddles
         handleBounce(ctx, &ball, &p1, &p2);
 
         BeginDrawing();
-            // set background colour
             ClearBackground(RAYWHITE);
 
             switch (ctx.state) {
                case Gamestate::START: drawStart(ctx); break;
-               case Gamestate::PLAY: drawPlay(ctx); break;
-               case Gamestate::PAUSE: drawPause(ctx); break;
+               case Gamestate::PLAY: drawPlay(ctx, p1, p2, ball); break;
+               case Gamestate::PAUSE: drawPause(ctx, p1, p2, ball); break;
                case Gamestate::WIN: drawWin(ctx); break;
-            }
-
-			// draw paddles and the ball when still in play
-            if (ctx.state != Gamestate::WIN) {
-                DrawRectangleRec(p1.area, RED);
-                DrawRectangleRec(p2.area, BLUE);
-                DrawCircle(ball.pos.x, ball.pos.y, ball.radius, BLACK);
-
-                // TODO: add different map with extra collision bits
-                //       iterate through array of recs and draw
-                //       need extra collision code for them too
             }
 
             if (ctx.debug) {
